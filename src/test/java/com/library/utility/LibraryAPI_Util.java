@@ -9,7 +9,14 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 
 public class LibraryAPI_Util {
+    private static String token;
 
+    public static String getToken() {
+        if(token==null){
+            token="your token is null check your login method";
+        }
+        return token;
+    }
 
     /**
      * Return TOKEN as String by using provided username from /token endpoint
@@ -24,7 +31,8 @@ public class LibraryAPI_Util {
 
 
 
-        return getToken(email,password);
+       token= getToken(email,password);
+       return token;
 
 
     }

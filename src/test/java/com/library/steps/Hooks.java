@@ -1,14 +1,13 @@
 package com.library.steps;
 
 
-
-
 import com.library.utility.ConfigurationReader;
 import com.library.utility.DB_Util;
 import com.library.utility.Driver;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
+import io.restassured.RestAssured;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 
@@ -18,7 +17,7 @@ import java.time.Duration;
 public class Hooks {
 
     @Before("@ui")
-    public void setUp(){
+    public void setUp() {
         Driver.getDriver().manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         Driver.getDriver().manage().window().maximize();
         Driver.getDriver().get(ConfigurationReader.getProperty("library_url"));
@@ -26,10 +25,10 @@ public class Hooks {
     }
 
     @After("@ui")
-    public void tearDown(Scenario scenario){
-        if(scenario.isFailed()){
+    public void tearDown(Scenario scenario) {
+        if (scenario.isFailed()) {
             final byte[] screenshot = ((TakesScreenshot) Driver.getDriver()).getScreenshotAs(OutputType.BYTES);
-            scenario.attach(screenshot,"image/png","screenshot");
+            scenario.attach(screenshot, "image/png", "screenshot");
         }
 
         Driver.closeDriver();
@@ -37,15 +36,25 @@ public class Hooks {
     }
 
     @Before("@db")
-    public void setUpDB(){
+    public void setUpDB() {
         System.out.println("Connecting to database...");
         DB_Util.createConnection();
     }
 
     @After("@db")
-    public void tearDownDB(){
+    public void tearDownDB() {
         System.out.println("close database connection...");
         DB_Util.destroy();
+    }
+
+    @Before("@api")
+    public void setUpApi() {
+        RestAssured.baseURI = ConfigurationReader.getProperty("library.baseUri");
+    }
+
+    @After("@api")
+    public void resetApi() {
+        RestAssured.reset();
     }
 
 }
