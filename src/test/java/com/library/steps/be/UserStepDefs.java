@@ -9,7 +9,9 @@ import io.cucumber.java.en.When;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.hamcrest.Matcher;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,7 @@ public class UserStepDefs {
     public static Map<String, Object> randomBookInformation;
     public static Map<String, Object> randomUserInformation;
     RequestSpecification requestSpecification;
-    String pathId;
+    String globalId;
 
     Response response;
 
@@ -63,51 +65,59 @@ public class UserStepDefs {
     }
 
     @And("Path param is {string}")
-    public void pathParamIs(String idValue) {
-        pathId = idValue;
-        requestSpecification.pathParam("id", pathId);
+    public void pathParamIs(String userId) {
+        globalId = userId;
+        requestSpecification.pathParam("id", userId);
     }
 
     @And("{string} field should be same with path param")
-    public void fieldShouldBeSameWithPathParam(String idValue) {
-        assertThat(response.path(idValue), is(pathId));
+    public void fieldShouldBeSameWithPathParam(String pathOfId) {
+        String actualId = response.jsonPath().getString(pathOfId);
+        assertThat(actualId, is(equalTo(globalId)));
     }
 
     @And("following fields should not be null")
-    public void followingFieldsShouldNotBeNull(List<String> fields) {
-        for (String eachField : fields) {
-            assertThat(response.path(eachField), is(notNullValue()));
+    public void followingFieldsShouldNotBeNull(List<String> keys) {
+        for (String eachKey : keys) {
+//            Object ob = response.jsonPath().get(eachKey);
+//            assertThat(ob,is(notNullValue()));
+            response.then().body(eachKey, is(notNullValue()));
         }
+
     }
 
     @And("Request Content Type header is {string}")
     public void requestContentTypeHeaderIs(String contentType) {
         requestSpecification = requestSpecification.contentType(contentType);
     }
-
+    Map<String,Object> randomDataMap;
     @And("I create a random {string} as request body")
-    public void iCreateARandomAsRequestBody(String mapType) {
-        switch (mapType) {
+    public void iCreateARandomAsRequestBody(String randomData) {
 
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+        switch (randomData) {
             case "book":
-                randomBookInformation = getRandomBookMap();
-                requestSpecification = requestSpecification.formParams(randomBookInformation);
+                requestBody = LibraryAPI_Util.getRandomBookMap();
                 break;
             case "user":
-                randomUserInformation = getRandomUserMap();
-                requestSpecification = requestSpecification.formParams(randomUserInformation);
+                requestBody = LibraryAPI_Util.getRandomUserMap();
                 break;
             default:
-                throw new IllegalArgumentException("Wrong Content Type");
+                throw new RuntimeException("Wrong Content Type-->"+randomData);
 
         }
+        System.out.println("requestBody = " + requestBody);
+
+
+//        randomDataMap=requestBody;
+        requestSpecification.formParams(requestBody);
     }
 
     @When("I send POST request to {string} endpoint")
     public void iSendPOSTRequestToEndpoint(String endpoint) {
-        response = given().spec(requestSpecification)
-                .when()
-                .post(endpoint);
+         requestSpecification.when().post(ConfigurationReader.getProperty("library.baseUri")+endpoint)
+                 .prettyPeek();
+
     }
 
     @And("the field value for {string} path should be equal to {string}")
