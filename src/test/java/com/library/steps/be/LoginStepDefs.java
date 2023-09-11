@@ -28,12 +28,7 @@ public class LoginStepDefs {
 
     Response response;
 
-    @Given("I logged Library api as a {string}")
-    public void i_logged_library_api_as_a(String userType) {
 
-        token = LibraryAPI_Util.getToken(userType);
-
-    }
 
 
 }
