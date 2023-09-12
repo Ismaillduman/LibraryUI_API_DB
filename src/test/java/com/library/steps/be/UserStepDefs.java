@@ -144,8 +144,9 @@ public class UserStepDefs {
     }
 
     @And("the field value for {string} path should be equal to {string}")
-    public void theFieldValueForPathShouldBeEqualTo(String arg0, String arg1) {
+    public void theFieldValueForPathShouldBeEqualTo(String key, String value) {
 
+        thenPart.body(key,is(value));
     }
 
     @And("I logged in Library UI as {string}")
