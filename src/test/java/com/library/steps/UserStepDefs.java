@@ -9,12 +9,14 @@ import com.library.utility.LibraryAPI_Util;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.restassured.internal.common.assertion.Assertion;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import org.junit.Assert;
 
+import java.rmi.server.UID;
 import java.sql.ResultSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -162,12 +164,58 @@ public class UserStepDefs {
 
         ResultSet resultSet = DB_Util.runQuery("select * from books where id='" + book_id + "'");
 
-        Map<String,Object> DBBook= DB_Util.getRowMap(1);
+        Map<String, Object> DBBook = DB_Util.getRowMap(1);
 
         DBBook.remove("id");
         DBBook.remove("added_date");
 
         System.out.println(DBBook);
+
+        //UI data -- actual
+        BookPage bookPage = new BookPage();
+        // we need bookName to find in UI.Make sure book name is unique.
+        // Normally ISBN should be unique for each book
+        String book_name = (String) randomDataMap.get("name");
+        System.out.println("book_name = " + book_name);
+        // Find book in UI
+        bookPage.search.sendKeys(book_name);
+        BrowserUtil.waitFor(3);
+
+        bookPage.editBook(book_name).click();
+        BrowserUtil.waitFor(3);
+
+        //Get book info
+        String UIBookname = bookPage.bookName.getAttribute("value");
+        String UIAuthor = bookPage.author.getAttribute("value");
+        String UIYear = bookPage.year.getAttribute("value");
+        String UIIsbn = bookPage.isbn.getAttribute("value");
+        String UIDescription = bookPage.description.getAttribute("value");
+
+
+        // We don't have category name information in book page.
+        // We only have id of category
+        // with the help of category id we will find category name by running query
+        // Find category as category_id
+        String UIBookCategory = BrowserUtil.getSelectedOption(bookPage.categoryDropdown);
+        DB_Util.runQuery("select id from book_categories where name='"+UIBookCategory+"'");
+        String UICategoryId=DB_Util.getFirstRowFirstColumn();
+
+        System.out.println("---------------------UI DATA-------------------------");
+        Map<String, String> UIBookDaten=new LinkedHashMap<>();
+        UIBookDaten.put("name",UIBookname);
+        UIBookDaten.put("isbn",UIIsbn);
+        UIBookDaten.put("year",UIYear);
+        UIBookDaten.put("author",UIAuthor);
+        UIBookDaten.put("book_category_id", UICategoryId);
+        UIBookDaten.put("description", UIDescription);
+
+        System.out.println("UIBookDaten = " + UIBookDaten);
+
+
+        //Assertion
+
+        Assert.assertEquals(APIBook,UIBookDaten);
+        Assert.assertEquals(APIBook,DBBook);
 
 
     }
